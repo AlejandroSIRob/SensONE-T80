@@ -18,6 +18,12 @@ Este repositorio contiene el script en Python para leer en tiempo real los datos
    ```bash
    pip install .
    ```
+4. **Modificar Rutas de archivos:**
+   Modificar vuestras rutas en los siguientes archivos:
+   * `examples/data_logger.py`
+   * `driver/bota_binary_gen0.json`
+   * `windows-scripts/run_data_logger.bat`
+
 ## 📂 Estructura del Proyecto
 
 * `examples/data_logger.py`: Script principal de adquisición y monitoreo.
