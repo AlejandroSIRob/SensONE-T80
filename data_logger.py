@@ -1,16 +1,15 @@
 import time
 import csv
-import random  # We use this to simulate until you get the cable from Saltanat
-import os      # NEW: Library to create folders automatically
+import os
 
-# 1. Define the folder and file names
-data_folder = "data"
+# 1. Definimos la ruta absoluta exacta para la carpeta data
+data_folder = r"C:\Users\alexs\Desktop\bota_driver_py_example\SensONE-T80\data"
 file_name = "force_data.csv"
 
-# 2. Create the "data" folder if it doesn't exist yet
+# 2. Crea la carpeta "data" en esa ruta exacta si no existe
 os.makedirs(data_folder, exist_ok=True)
 
-# 3. Combine folder and filename (e.g., "data/force_data.csv")
+# 3. Combina la ruta de la carpeta con el nombre del archivo
 file_path = os.path.join(data_folder, file_name)
 
 print("="*50)
@@ -19,41 +18,49 @@ print(f"Logging data to: {file_path}")
 print("Press Ctrl + C in this console to stop recording.")
 print("="*50 + "\n")
 
-# Open the CSV file in write mode ('w') using the new path
+# ====================================================================
+# ⚠️ IMPORTANTE PARA CUANDO TENGAS EL CABLE:
+# Aquí arriba tendrás que pegar las 2 o 3 líneas del ejemplo original 
+# de Bota Systems que sirven para conectar el sensor al puerto COM.
+# (Algo del estilo: sensor = BotaDriver("COM3") o similar).
+# ====================================================================
+
+# Abrimos el CSV en modo escritura ('w')
 with open(file_path, mode='w', newline='') as csv_file:
     writer = csv.writer(csv_file)
     
-    # Write the header (column names for Excel/OpenSim)
+    # Escribimos la cabecera (nombres de las columnas)
     writer.writerow(['Time_s', 'Fz_Newtons'])
     
-    # Save the exact start time to calculate elapsed time
+    # Guardamos el momento exacto de inicio
     start_time = time.time()
     
     try:
-        # Infinite logging loop
+        # Bucle infinito de grabación
         while True:
-            # Calculate elapsed time in seconds (rounded to 3 decimals)
+            # Calculamos el tiempo transcurrido (redondeado a 3 decimales)
             current_time = round(time.time() - start_time, 3)
             
             # ----------------------------------------------------
-            # READ REAL SENSOR HERE (When you plug in the cable):
-            # force_z = sensor.read().forces.z
+            # LECTURA REAL DEL SENSOR
             # ----------------------------------------------------
+            # Leemos la fuerza Z real del hardware
+            raw_force_z = sensor.read().forces.z
             
-            # Meanwhile, we generate a simulated force to test the script:
-            force_z = round(random.uniform(-2.0, 45.0), 2)
+            # La redondeamos a 2 decimales para no tener números infinitos en el Excel
+            force_z = round(raw_force_z, 2) 
             
-            # Save data to the Excel/CSV file (New row)
+            # Guardamos la fila en el CSV
             writer.writerow([current_time, force_z])
             
-            # Print to screen to verify it's working in real-time
+            # Imprimimos en pantalla para ver que todo fluye
             print(f"Logging -> Time: {current_time} s  |  Fz: {force_z} N")
             
-            # Pause for 0.1 seconds (Recording at 10 Hz)
+            # Pausa de 0.1 segundos (Graba a 10 Hz)
             time.sleep(0.1) 
             
     except KeyboardInterrupt:
-        # Safe exit when pressing Ctrl+C
+        # Salida segura al pulsar Ctrl+C
         print("\n" + "="*50)
         print(f"Recording successfully finished!")
         print(f"Your data is safe in the folder: {file_path}")
