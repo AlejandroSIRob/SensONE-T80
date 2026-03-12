@@ -17,6 +17,7 @@ Este repositorio contiene el script en Python para leer en tiempo real los datos
    Abre la terminal en la carpeta principal del driver, activa tu entorno virtual y ejecuta:
    ```bash
    pip install .
+   pip install pandas numpy matplotlib scipy
    ```
 4. **Modificar Rutas de archivos:**
    Modificar vuestras rutas en los siguientes archivos:
@@ -33,7 +34,7 @@ Este repositorio contiene el script en Python para leer en tiempo real los datos
 * `windows-scripts/run_data_logger.bat`: Lanzador automatizado para Windows.
 * `data/` y `sync-imu/sinc-data/`: Carpetas donde se almacenan las grabaciones y los datasets fusionados.
 
-## 🚀 Uso
+## 🚀 1.-Uso
 
 1. Conecta el sensor SensONE T80 al puerto USB de tu equipo.
 2. Abre una terminal dentro de esta carpeta (`SensONE-T80`).
@@ -45,6 +46,16 @@ Este repositorio contiene el script en Python para leer en tiempo real los datos
 * **Puesta a cero**: El script realiza una **tara automática** (software tare) al inicio. No toques el sensor durante el primer segundo tras la activación.
 * **Monitoreo**: La consola mostrará en tiempo real la fuerza (N), el torque (Nm), la temperatura y la frecuencia de actualización (Hz).
 * **Finalización**: Pulsa `Ctrl + C` para cerrar el sensor de forma segura y finalizar la escritura del archivo.
+
+
+## 🔄 2.-Uso
+
+Para alinear temporalmente una toma de fuerza con una toma de captura de movimiento (buscando automáticamente un patrón de 3 impactos), ejecuta desde la carpeta principal `SensONE-T80`:
+
+```bash
+python sync-imu/sync.py --imu "ruta/a/cinematica.sto" --force "ruta/a/force_data.csv"
+```
+El script generará un DATASET_MAESTRO.csv remuestreado a 100 Hz exactos, junto con gráficas de validación en la carpeta sync-imu/sinc-data/.
 
 ## 📊 Datos de Salida
 
