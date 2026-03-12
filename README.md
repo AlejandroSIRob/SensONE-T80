@@ -18,6 +18,12 @@ Este repositorio contiene el script en Python para leer en tiempo real los datos
    ```bash
    pip install .
    ```
+## 📂 Estructura del Proyecto
+
+* `examples/data_logger.py`: Script principal de adquisición y monitoreo.
+* `driver/bota_binary_gen0.json`: Configuración del puerto COM y parámetros del hardware.
+* `windows-scripts/run_data_logger.bat`: Lanzador automatizado para Windows.
+* `data/`: Carpeta donde se almacenan las grabaciones (generada automáticamente).
 
 ## 🚀 Uso
 
@@ -25,16 +31,20 @@ Este repositorio contiene el script en Python para leer en tiempo real los datos
 2. Abre una terminal dentro de esta carpeta (`SensONE-T80`).
 3. Ejecuta el script de grabación:
    ```bash
-   python data_logger.py
+   .\windows-scripts\run_data_logger.bat
    ```
-*Nota: Para detener la grabación y guardar el archivo de forma segura, pulsa `Ctrl + C` en la consola.*
 
-## 📊 Formato de Salida
+* **Puesta a cero**: El script realiza una **tara automática** (software tare) al inicio. No toques el sensor durante el primer segundo tras la activación.
+* **Monitoreo**: La consola mostrará en tiempo real la fuerza (N), el torque (Nm), la temperatura y la frecuencia de actualización (Hz).
+* **Finalización**: Pulsa `Ctrl + C` para cerrar el sensor de forma segura y finalizar la escritura del archivo.
 
-El script generará (o sobrescribirá) el archivo `force_data.csv` en esta misma carpeta con la siguiente estructura:
+## 📊 Datos de Salida
 
-| Time_s | Fz_Newtons |
-|--------|------------|
-| 0.100  | 12.34      |
-| 0.200  | 15.60      |
-| ...    | ...        |
+Los archivos se guardan en la carpeta `/data` con el formato `force_data_YYYYMMDD_HHMMSS.csv`.
+
+| Time_s | Fx | Fy | Fz | Tx | Ty | Tz |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 0.0001 | ... | ... | ... | ... | ... | ... |
+
+* **Unidades**: Fuerzas en Newtons (N), Torques en Newton-metro (Nm).
+* **Frecuencia**: Los datos se registran a la frecuencia máxima permitida por el bus serie (~400 Hz).
