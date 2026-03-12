@@ -5,6 +5,7 @@ import csv
 import signal
 import bota_driver
 from datetime import datetime
+from collections import deque
 
 # ==========================================
 # 1. SETUP DE SEGURIDAD (Apagado Seguro)
@@ -36,75 +37,94 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # 2. Subimos un nivel (a SensONE-T80) y entramos en la carpeta 'driver'
 config_path = os.path.join(os.path.dirname(current_dir), "driver", "bota_binary_gen0.json")
+
 # ==========================================
-# 3. LÓGICA PRINCIPAL (DRIVER + CSV)
+# 3. LÓGICA PRINCIPAL (DRIVER + CSV + DISPLAY)
 # ==========================================
 print("="*50)
-print("Starting SensONE-T80 Data Logger")
-print(f"Logging data to: {file_path}")
-print("Press Ctrl + C to stop recording.")
+print("SENS-ONE T80 DATA LOGGER & MONITOR")
+print(f"Archivo de datos: {file_path}")
+print("Presiona Ctrl + C para detener la grabación.")
 print("="*50 + "\n")
 
 try:
     # --- A. INICIALIZAR EL HARDWARE ---
     bota_ft_sensor_driver = bota_driver.BotaDriver(config_path)
-    
-    if not bota_ft_sensor_driver.configure():
-        raise RuntimeError("Failed to configure driver")
+    print(f" >>>>>>>>>>> BotaDriver version: {bota_ft_sensor_driver.get_driver_version_string()} <<<<<<<<<<<< ")
 
-    print("[INFO] Taring sensor (Setting to zero)... Please do not touch it.")
-    time.sleep(1) # Pequeña pausa para asegurar que nadie lo toca
+    if not bota_ft_sensor_driver.configure():
+        raise RuntimeError("Error al configurar el driver")
+
+    print("[INFO] Haciendo TARA... No toque el sensor.")
+    time.sleep(1)
     if not bota_ft_sensor_driver.tare():
-        raise RuntimeError("Failed to tare sensor")
+        raise RuntimeError("Error al hacer la tara")
 
     if not bota_ft_sensor_driver.activate():
-        raise RuntimeError("Failed to activate driver")
+        raise RuntimeError("Error al activar el driver")
     
-    print("[INFO] Sensor ACTIVE. Starting data logging...\n")
+    print("[INFO] Sensor ACTIVO. Grabando y monitoreando...\n")
 
-    # --- B. GRABACIÓN EN CSV ---
+    # --- B. CONFIGURACIÓN DE PANTALLA ---
+    PRINTING_FREQUENCY = 1.0  # Hz (Se actualiza la info en pantalla cada 1 seg)
+    max_samples = 100
+    reading_times = deque(maxlen=max_samples)
+    last_reading_time = time.perf_counter()
+
+    # --- C. BUCLE DE GRABACIÓN Y LECTURA ---
     with open(file_path, mode='w', newline='') as csv_file:
         writer = csv.writer(csv_file)
-        
-        # Opcional: Si OpenSim necesita Fx y Fy, puedes añadirlos aquí
-        writer.writerow(['Time_s', 'Fz_Newtons'])
+        # Cabecera del CSV (puedes añadir más columnas si quieres guardar todo)
+        writer.writerow(['Time_s', 'Fx', 'Fy', 'Fz', 'Tx', 'Ty', 'Tz'])
         
         start_time = time.perf_counter()
         last_print_time = start_time
-        
-        # Bucle de lectura (se detiene si pulsas Ctrl+C)
-        while not stop_flag:
-            
-            # 1. Leer el bloque de datos real (Se queda esperando hasta que llega el dato)
-            bota_frame = bota_ft_sensor_driver.read_frame_blocking()
-            current_time = round(time.perf_counter() - start_time, 4)
-            
-            # 2. Extraer la Fuerza Z
-            # Nota: bota_frame.force es una lista [Fx, Fy, Fz]. El índice 2 es la Z.
-            force_z = round(bota_frame.force[2], 3)
-            
-            # 3. Guardar en el Excel
-            writer.writerow([current_time, force_z])
-            
-            # 4. Imprimir en pantalla solo 2 veces por segundo (0.5s) para no saturar la consola
-            if time.perf_counter() - last_print_time >= 0.5:
-                print(f"Logging -> Time: {current_time} s  |  Fz: {force_z} N")
-                last_print_time = time.perf_counter()
 
-# --- C. APAGADO SEGURO (Se ejecuta siempre, haya error o no) ---
+        while not stop_flag:
+            # 1. Leer frame del sensor
+            bota_frame = bota_ft_sensor_driver.read_frame_blocking()
+            
+            # 2. Cálculo de tiempos y frecuencia
+            current_reading_time = time.perf_counter()
+            reading_duration = current_reading_time - last_reading_time
+            last_reading_time = current_reading_time
+            reading_times.append(reading_duration)
+            
+            elapsed_time = round(current_reading_time - start_time, 4)
+            
+            # 3. Extraer datos del frame
+            f = bota_frame.force
+            t = bota_frame.torque
+            s = bota_frame.status
+
+            # 4. Guardar en CSV (Guardamos las 3 fuerzas y 3 torques)
+            writer.writerow([elapsed_time, f[0], f[1], f[2], t[0], t[1], t[2]])
+
+            # 5. Imprimir en pantalla (Monitoreo visual)
+            if current_reading_time - last_print_time >= 1.0/PRINTING_FREQUENCY:
+                # Calcular frecuencia real de actualización
+                avg_freq = len(reading_times) / sum(reading_times) if reading_times else 0
+
+                print("----------------------------")
+                print(f"TIEMPO: {elapsed_time} s")
+                print(f"Status: [throttled={s.throttled}, overrange={s.overrange}, invalid={s.invalid}]")
+                print(f"Force  (N) : [{f[0]:.2f}, {f[1]:.2f}, {f[2]:.2f}]")
+                print(f"Torque (Nm): [{t[0]:.3f}, {t[1]:.3f}, {t[2]:.3f}]")
+                print(f"Temp: {bota_frame.temperature:.1f} °C  |  Timestamp: {bota_frame.timestamp}")
+                print(f"Update Rate: {avg_freq:.2f} Hz")
+                print("----------------------------")
+                last_print_time = current_reading_time
+
 except Exception as e:
-    print(f"\n[FATAL ERROR]: {e}")
+    print(f"\n[ERROR FATAL]: {e}")
     
 finally:
     print("\n" + "="*50)
-    print("Shutting down hardware safely...")
-    
-    # Intenta desactivar y apagar el driver si existe
+    print("Cerrando hardware de forma segura...")
     if 'bota_ft_sensor_driver' in locals():
         bota_ft_sensor_driver.deactivate()
         bota_ft_sensor_driver.shutdown()
         
-    print(f"Recording successfully finished!")
-    print(f"Your data is safe in: {file_path}")
+    print(f"Grabación finalizada. Datos en: {file_path}")
     print("="*50)
     sys.exit(0)
