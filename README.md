@@ -23,13 +23,15 @@ Este repositorio contiene el script en Python para leer en tiempo real los datos
    * `examples/data_logger.py`
    * `driver/bota_binary_gen0.json`
    * `windows-scripts/run_data_logger.bat`
+   * `sync-imu/sync.py`
 
 ## 📂 Estructura del Proyecto
 
-* `examples/data_logger.py`: Script principal de adquisición y monitoreo.
+* `examples/data_logger.py`: Script principal de adquisición y monitoreo en tiempo real.
+* `sync-imu/sync.py`: Script de fusión multimodal (Sincroniza IMU + Fuerza basándose en impactos).
 * `driver/bota_binary_gen0.json`: Configuración del puerto COM y parámetros del hardware.
 * `windows-scripts/run_data_logger.bat`: Lanzador automatizado para Windows.
-* `data/`: Carpeta donde se almacenan las grabaciones (generada automáticamente).
+* `data/` y `sync-imu/sinc-data/`: Carpetas donde se almacenan las grabaciones y los datasets fusionados.
 
 ## 🚀 Uso
 
