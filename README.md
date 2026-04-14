@@ -26,7 +26,7 @@ Este repositorio contiene el script en Python para leer en tiempo real los datos
    * `windows-scripts/run_data_logger.bat`
    * `sync-imu/sync.py`
 
-## 📂 Estructura del Proyecto
+## 📂 Estructura del Proyecto tanto version Linux como Windows
 
 * `examples/data_logger.py`: Script principal de adquisición y monitoreo en tiempo real.
 * `sync-imu/sync.py`: Script de fusión multimodal (Sincroniza IMU + Fuerza basándose en impactos).
